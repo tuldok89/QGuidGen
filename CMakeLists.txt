@@ -18,6 +18,8 @@ set(PROJECT_SOURCES
         mainwindow.h
         mainwindow.ui
         resources.qrc
+        guidgen.h
+        guidgen.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

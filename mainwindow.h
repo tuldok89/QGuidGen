@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QUuid>
 
+#include "guidgen.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -18,14 +20,16 @@ public:
 
 private slots:
     void exitButtonClicked();
-    void newGuidButtonClicked();
     void copyButtonClicked();
-
+    void updateUi();
+    void updateUi(const QUuid& uuid);
 private:
     Ui::MainWindow *ui;
-    QUuid uuid;
     QString formattedUuid;
+    GuidGen* _guidGen;
+    constexpr static char const* _commentFormat = "// {%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}\n";
+    constexpr static char const* _guidFormat1 = "0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x);\n";
+    constexpr static char const* _guidFormat2 = "{ 0x%x, 0x%x, 0x%x, { 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x } };";
     void newUuid();
-    void formatUuid();
 };
 #endif // MAINWINDOW_H

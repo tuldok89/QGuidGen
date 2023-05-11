@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+
 #include <QCoreApplication>
 #include <QClipboard>
 
@@ -10,38 +11,30 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     this->setFixedSize(this->size());
 
+    _guidGen = new GuidGen();
     connect(ui->exitButton, &QPushButton::clicked, this, &MainWindow::exitButtonClicked);
-    connect(ui->newGuidButton, &QPushButton::clicked, this, &MainWindow::newGuidButtonClicked);
+    connect(ui->newGuidButton, &QPushButton::clicked, _guidGen, &GuidGen::newGuid);
     connect(ui->copyButton, &QPushButton::clicked, this, &MainWindow::copyButtonClicked);
-    connect(ui->format1RadioButton, &QRadioButton::clicked, this, [=]() { formatUuid(); });
-    connect(ui->format2RadioButton, &QRadioButton::clicked, this, [=]() { formatUuid(); });
-    connect(ui->format3RadioButton, &QRadioButton::clicked, this, [=]() { formatUuid(); });
-    connect(ui->format4RadioButton, &QRadioButton::clicked, this, [=]() { formatUuid(); });
-    connect(ui->format5RadioButton, &QRadioButton::clicked, this, [=]() { formatUuid(); });
-    connect(ui->format6RadioButton, &QRadioButton::clicked, this, [=]() { formatUuid(); });
-    newUuid();
-    formatUuid();
+    connect(ui->format1RadioButton, &QRadioButton::clicked, this, qOverload<>(&MainWindow::updateUi));
+    connect(ui->format2RadioButton, &QRadioButton::clicked, this, qOverload<>(&MainWindow::updateUi));
+    connect(ui->format3RadioButton, &QRadioButton::clicked, this, qOverload<>(&MainWindow::updateUi));
+    connect(ui->format4RadioButton, &QRadioButton::clicked, this, qOverload<>(&MainWindow::updateUi));
+    connect(ui->format5RadioButton, &QRadioButton::clicked, this, qOverload<>(&MainWindow::updateUi));
+    connect(ui->format6RadioButton, &QRadioButton::clicked, this, qOverload<>(&MainWindow::updateUi));
+    connect(_guidGen, qOverload<const QUuid&>(&GuidGen::guidChanged), this, qOverload<const QUuid&>(&MainWindow::updateUi));
+
+    _guidGen->newGuid();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete _guidGen;
 }
 
 void MainWindow::exitButtonClicked()
 {
-    QCoreApplication::exit();
-}
-
-void MainWindow::newUuid()
-{
-    uuid = QUuid::createUuid();
-}
-
-void MainWindow::newGuidButtonClicked()
-{
-    newUuid();
-    formatUuid();
+    qApp->exit();
 }
 
 void MainWindow::copyButtonClicked()
@@ -49,14 +42,12 @@ void MainWindow::copyButtonClicked()
     qApp->clipboard()->setText(formattedUuid);
 }
 
-void MainWindow::formatUuid()
+void MainWindow::updateUi(const QUuid& uuid)
 {
-    auto line1format = "// {%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}\n";
-    auto line3format = "0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x);\n";
     if (ui->format1RadioButton->isChecked())
     {
         formattedUuid.clear();
-        formattedUuid.append(QString::asprintf(line1format,
+        formattedUuid.append(QString::asprintf(_commentFormat,
                                                uuid.data1,
                                                uuid.data2,
                                                uuid.data3,
@@ -69,7 +60,7 @@ void MainWindow::formatUuid()
                                                uuid.data4[6],
                                                uuid.data4[7]))
             .append(QStringLiteral("IMPLEMENT_OLECREATE(<<class>>, <<external_name>>,\n"))
-            .append(QString::asprintf(line3format,
+            .append(QString::asprintf(_guidFormat1,
                                       uuid.data1,
                                       uuid.data2,
                                       uuid.data3,
@@ -85,7 +76,7 @@ void MainWindow::formatUuid()
     else if (ui->format2RadioButton->isChecked())
     {
         formattedUuid.clear();
-        formattedUuid.append(QString::asprintf(line1format,
+        formattedUuid.append(QString::asprintf(_commentFormat,
                                                uuid.data1,
                                                uuid.data2,
                                                uuid.data3,
@@ -98,7 +89,7 @@ void MainWindow::formatUuid()
                                                uuid.data4[6],
                                                uuid.data4[7]))
             .append(QStringLiteral("DEFINE_GUID(<<name>>,\n"))
-            .append(QString::asprintf(line3format,
+            .append(QString::asprintf(_guidFormat1,
                                       uuid.data1,
                                       uuid.data2,
                                       uuid.data3,
@@ -114,7 +105,7 @@ void MainWindow::formatUuid()
     else if (ui->format3RadioButton->isChecked())
     {
         formattedUuid.clear();
-        formattedUuid.append(QString::asprintf(line1format,
+        formattedUuid.append(QString::asprintf(_commentFormat,
                                                uuid.data1,
                                                uuid.data2,
                                                uuid.data3,
@@ -127,7 +118,7 @@ void MainWindow::formatUuid()
                                                uuid.data4[6],
                                                uuid.data4[7]))
             .append(QStringLiteral("static const GUID <<name>> =\n"))
-            .append(QString::asprintf("{ 0x%x, 0x%x, 0x%x, { 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x } };",
+            .append(QString::asprintf(_guidFormat2,
                                       uuid.data1,
                                       uuid.data2,
                                       uuid.data3,
@@ -154,4 +145,9 @@ void MainWindow::formatUuid()
     }
 
     ui->resultLabel->setText(formattedUuid);
+}
+
+void MainWindow::updateUi()
+{
+    updateUi(_guidGen->getGuid());
 }
